@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Are u Basta Enough</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+        }
+
+        video {
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #timer {
+            font-size: 2rem;
+            color: red;
+            margin-bottom: 20px;
+        }
+
+        #qcm {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #qcm button {
+            padding: 10px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        #result {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        .feedback-image {
+            display: none;
+            width: 150px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <img src="assets/image.png" alt="Basta Logo" style="width: 150px; margin-bottom: 10px;">
+    <h1>Are u Basta Enough</h1>
+    <video id="songVideo" src="assets/charokhaniMP4.mp4" type="video/mp4" autoplay muted></video>
+    <audio id="songAudio" src="assets/charokhaniMP3.mp3"></audio>
+    <div id="timer">10</div>
+    <div id="qcm">
+        <div id="question">Question will appear here</div>
+        <div id="options"></div>
+    </div>
+    <img id="correctImage" src="assets/correct.jpg" alt="Correct Answer" class="feedback-image">
+    <img id="wrongImage" src="assets/wrong.png" alt="Wrong Answer" class="feedback-image">
+    <div id="result"></div>
+
+    <script>
+        // QCM data
+        const qcmData = [
+            {
+                time: 0,
+                question: "What is the name of the artist?",
+                options: [
+                    { text: "A. Lady Gaga", value: "A" },
+                    { text: "B. Charokhani", value: "B" },
+                    { text: "C. Taylor Swift", value: "C" }
+                ],
+                correctAnswer: "B"
+            },
+            {
+                time: 4,
+                question: "Complete the lyric: 'W ida sba7...'",
+                options: [
+                    { text: "A. Ywda7", value: "A" },
+                    { text: "B. Ydlam", value: "B" },
+                    { text: "C. nkhdmo", value: "C" }
+                ],
+                correctAnswer: "B"
+            },
+            {
+                time: 20,
+                question: "Rumor has it, Charokhani is...",
+                options: [
+                    { text: "A. Mat", value: "A" },
+                    { text: "B. 9aysso Lma", value: "B" },
+                    { text: "C. Basta", value: "C" }
+                ],
+                correctAnswer: "C"
+            },
+            {
+                time: 28,
+                question: "The nice gentleman will start",
+                options: [
+                    { text: "A. ybki", value: "A" },
+                    { text: "B. y7an9az", value: "B" },
+                    { text: "C. ySwingi", value: "C" }
+                ],
+                correctAnswer: "B"
+            }
+        ];
+
+        // DOM elements
+        const video = document.getElementById('songVideo');
+        const audio = document.getElementById('songAudio');
+        const timerDisplay = document.getElementById('timer');
+        const qcm = document.getElementById('qcm');
+        const questionDisplay = document.getElementById('question');
+        const optionsDisplay = document.getElementById('options');
+        const resultDisplay = document.getElementById('result');
+        const correctImage = document.getElementById('correctImage');
+        const wrongImage = document.getElementById('wrongImage');
+
+        let timer = 10;
+        let interval;
+        let currentQcmIndex = 0;
+
+        // Start the game
+        function startGame() {
+            video.play();
+            audio.play();
+            monitorQCMs();
+        }
+
+        // Monitor when to display QCMs
+        function monitorQCMs() {
+            const qcmTimes = qcmData.map(qcm => qcm.time);
+            const checkQCM = setInterval(() => {
+                const currentTime = Math.floor(video.currentTime);
+                if (qcmTimes.includes(currentTime)) {
+                    const qcmIndex = qcmTimes.indexOf(currentTime);
+                    if (qcmIndex === currentQcmIndex) {
+                        clearInterval(interval); // Stop timer for previous QCM
+                        displayQCM(qcmData[currentQcmIndex]);
+                        currentQcmIndex++;
+                    }
+                }
+                if (currentQcmIndex >= qcmData.length) {
+                    clearInterval(checkQCM); // Stop monitoring after last QCM
+                }
+            }, 500);
+        }
+
+        // Display a QCM
+        function displayQCM(qcmInfo) {
+            video.pause();
+            audio.pause();
+
+            // Set the question and options
+            questionDisplay.textContent = qcmInfo.question;
+            optionsDisplay.innerHTML = "";
+            qcmInfo.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.dataset.answer = option.value;
+                button.onclick = () => {
+                    checkAnswer(option.value === qcmInfo.correctAnswer);
+                };
+                optionsDisplay.appendChild(button);
+            });
+
+            // Show QCM and start timer
+            qcm.style.display = 'block';
+            resetTimer();
+        }
+
+        // Reset and start the countdown timer
+        function resetTimer() {
+            timer = 10; // Reset timer to 10
+            timerDisplay.textContent = timer;
+            interval = setInterval(() => {
+                timer--;
+                timerDisplay.textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(interval);
+                    checkAnswer(false); // Time ran out
+                }
+            }, 1000);
+        }
+
+        // Check the selected answer
+        function checkAnswer(isCorrect) {
+            clearInterval(interval); // Stop the timer
+            correctImage.style.display = isCorrect ? "block" : "none";
+            wrongImage.style.display = isCorrect ? "none" : "block";
+            resultDisplay.textContent = isCorrect ? "🎉 Correct!" : "❌ Incorrect!";
+            setTimeout(() => {
+                resultDisplay.textContent = "";
+                correctImage.style.display = "none";
+                wrongImage.style.display = "none";
+                resumeMedia();
+            }, 2000);
+        }
+
+        // Resume video and audio
+        function resumeMedia() {
+            qcm.style.display = 'none';
+            video.play();
+            audio.play();
+        }
+
+        // Start the game on page load
+        window.onload = startGame;
+    </script>
+</body>
+
+</html>
